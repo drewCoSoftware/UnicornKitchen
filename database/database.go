@@ -10,11 +10,47 @@ import (
 	//	"github.com/go-pg/pg/v10/orm"
 )
 
+const DB_NAME string = "unicornkitchen"
+
 func CreateDatabase() {
 	db := pg.Connect(&pg.Options{
 		// NOTE: This is dev data.  In real life, one would use 'secrets' from their container or server provider.
 		User:     "postgres",
 		Password: "abc123",
+	})
+	defer db.Close()
+
+	// Let's make the Database first...
+	exists, err := dbExists(db, DB_NAME)
+	if err != nil {
+		fmt.Println("There was an error checking for the database!")
+		fmt.Println(err.Error())
+		return
+	}
+
+	if !exists {
+		fmt.Println("The database doesn't exist, so we will create it!")
+
+		_, err := db.Exec("CREATE DATABASE " + DB_NAME)
+		if err != nil {
+			fmt.Println("There was an error creating the Database!")
+			fmt.Println(err.Error())
+		} else {
+			fmt.Println("Database creation OK!")
+		}
+	} else {
+		fmt.Println("The database already exists.")
+	}
+
+}
+
+func CreateTables() {
+
+	db := pg.Connect(&pg.Options{
+		// NOTE: This is dev data.  In real life, one would use 'secrets' from their container or server provider.
+		User:     "postgres",
+		Password: "abc123",
+		Database: DB_NAME,
 	})
 	defer db.Close()
 
@@ -44,39 +80,17 @@ func dbExists(db *pg.DB, dbName string) (bool, error) {
 // Create the UnicorKitchen schema if it doesn't currently exist.
 func createSchema(db *pg.DB) error {
 
-	const DB_NAME string = "unicornkitchen"
-
-	// Let's make the Database first...
-	//if !dbExists(db, DB_NAME)
-	exists, err := dbExists(db, DB_NAME)
-	if err != nil {
-		fmt.Println("There was an error checking for the database!")
-		fmt.Println(err.Error())
-
-		return err
-	}
-
-	if !exists {
-		fmt.Println("The database doesn't exist, so we will create it!")
-
-		_, err := db.Exec("CREATE DATABASE " + DB_NAME)
-		if err != nil {
-			fmt.Println("There was an error creating the Database!")
-			fmt.Println(err.Error())
-		} else {
-			fmt.Println("Database creation OK!")
-		}
-	}
-
 	models := []interface{}{
 		(*Ingredient)(nil),
 		(*Recipe)(nil),
 	}
 
 	for _, model := range models {
+		// We could individually check for tables here and create one by one if we wanted to...
+
 		err := db.Model(model).CreateTable(&orm.CreateTableOptions{
 			Temp:        false,
-			IfNotExists: true,
+			IfNotExists: false,
 		})
 		if err != nil {
 			return err

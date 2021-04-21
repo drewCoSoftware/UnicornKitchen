@@ -18,5 +18,5 @@ func main() {
 
 	// We want to create our database resources if they don't currently exist.
 	database.CreateDatabase()
-
+	database.CreateTables()
 }
