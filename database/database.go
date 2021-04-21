@@ -44,14 +44,33 @@ func CreateDatabase() {
 
 }
 
-func CreateTables() {
-
-	db := pg.Connect(&pg.Options{
+func getConnection() *pg.DB {
+	res := pg.Connect(&pg.Options{
 		// NOTE: This is dev data.  In real life, one would use 'secrets' from their container or server provider.
 		User:     "postgres",
 		Password: "abc123",
 		Database: DB_NAME,
 	})
+	return res
+}
+
+func AddDefaultData() {
+	db := getConnection()
+	defer db.Close()
+
+	fmt.Println("adding a potato...")
+
+	i1 := &Ingredient{
+		Name: "Potato",
+	}
+	_, err := db.Model(i1).Insert()
+	if err != nil {
+		panic(err)
+	}
+}
+
+func CreateTables() {
+	db := getConnection()
 	defer db.Close()
 
 	// We could do some stuff here.....
@@ -62,7 +81,6 @@ func CreateTables() {
 	} else {
 		fmt.Println("Schema creation is OK!")
 	}
-
 }
 
 func dbExists(db *pg.DB, dbName string) (bool, error) {
@@ -90,7 +108,7 @@ func createSchema(db *pg.DB) error {
 
 		err := db.Model(model).CreateTable(&orm.CreateTableOptions{
 			Temp:        false,
-			IfNotExists: false,
+			IfNotExists: true,
 		})
 		if err != nil {
 			return err
