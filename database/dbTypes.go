@@ -4,12 +4,12 @@ import "fmt"
 
 type Ingredient struct {
 	Id   int64
-	Name string
+	Name string `pg:",unique"`
 }
 
 type Recipe struct {
 	Id   int64
-	Name string
+	Name string `pg:",unique"`
 }
 
 // These are just type aliases.....

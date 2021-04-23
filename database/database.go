@@ -4,20 +4,15 @@ import (
 	//	"fmt"
 
 	"fmt"
+	"os"
 
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
 	//	"github.com/go-pg/pg/v10/orm"
 )
 
-const DB_NAME string = "unicornkitchen"
-
 func CreateDatabase() {
-	db := pg.Connect(&pg.Options{
-		// NOTE: This is dev data.  In real life, one would use 'secrets' from their container or server provider.
-		User:     "postgres",
-		Password: "abc123",
-	})
+	db := pg.Connect(settings.GetDatabaseOptions())
 	defer db.Close()
 
 	// Let's make the Database first...
@@ -31,7 +26,7 @@ func CreateDatabase() {
 	if !exists {
 		fmt.Println("The database doesn't exist, so we will create it!")
 
-		_, err := db.Exec("CREATE DATABASE " + DB_NAME)
+		_, err := db.Exec("CREATE DATABASE " + settings.DB_NAME)
 		if err != nil {
 			fmt.Println("There was an error creating the Database!")
 			fmt.Println(err.Error())
@@ -44,7 +39,10 @@ func CreateDatabase() {
 
 }
 
-func getConnection() *pg.DB {
+func GetConnection() *pg.DB {
+	// addr := os.Getenv("DB_ADDR")
+	// user := os.Getenv()
+
 	res := pg.Connect(&pg.Options{
 		// NOTE: This is dev data.  In real life, one would use 'secrets' from their container or server provider.
 		User:     "postgres",
@@ -69,12 +67,12 @@ func AddDefaultData() {
 	}
 }
 
-func CreateTables() {
+func CreateTables(removeExisting bool) {
 	db := getConnection()
 	defer db.Close()
 
 	// We could do some stuff here.....
-	err := createSchema(db)
+	err := createSchema(db, removeExisting)
 	if err != nil {
 		fmt.Println("There was an error creating the schema!")
 		fmt.Println(err.Error())
@@ -96,7 +94,7 @@ func dbExists(db *pg.DB, dbName string) (bool, error) {
 }
 
 // Create the UnicorKitchen schema if it doesn't currently exist.
-func createSchema(db *pg.DB) error {
+func createSchema(db *pg.DB, removeExistingTables bool) error {
 
 	models := []interface{}{
 		(*Ingredient)(nil),
@@ -105,6 +103,11 @@ func createSchema(db *pg.DB) error {
 
 	for _, model := range models {
 		// We could individually check for tables here and create one by one if we wanted to...
+		if removeExistingTables {
+			db.Model(model).DropTable(&orm.DropTableOptions{
+				IfExists: true,
+			})
+		}
 
 		err := db.Model(model).CreateTable(&orm.CreateTableOptions{
 			Temp:        false,
