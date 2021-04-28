@@ -7,6 +7,11 @@ import (
 	"github.com/go-pg/pg/v10/orm"
 )
 
+// type DAL
+// {
+
+// }
+
 func CreateDatabase() {
 	db := pg.Connect(settings.GetDatabaseOptions())
 	defer db.Close()
@@ -53,21 +58,26 @@ func AddDefaultData() {
 	}
 	insertData(db, i1)
 
-	// Let's create a new recipe, and add the data, all in one go.
+}
 
-	// recipeIngredient := &IngredientEntry{
-	// 	Ingredient: i1,
-	// 	Amount:     "1",
-	// }
+// func (db *pg.DB)  SaveRecipe(r *Recipe) {
+// }
 
-	///	insertData(db, recipeIngredient)
-	// r1 := &Recipe{
-	// 	Name:        "Volts",
-	// 	Ingredients: []*IngredientEntry{recipeIngredient},
-	// }
+func SaveRecipe(db *pg.DB, r *Recipe) {
 
-	//	insertData(db, r1)
+	fmt.Println("Saving Recipe: " + r.Name)
 
+	// Iterate over the ingredients, saving each if it doesn't exist...
+	for item := range r.Ingredients {
+		ingredient := r.Ingredients[item].Ingredient
+		//		fmt.Println(ingredient.Name)
+
+		var i Ingredient
+		var match = db.Model(&i).First()
+
+		fmt.Println(ingredient.Name)
+		fmt.Println(match)
+	}
 }
 
 func insertData(db *pg.DB, data interface{}) {
@@ -106,12 +116,12 @@ func dbExists(db *pg.DB, dbName string) (bool, error) {
 // Create the UnicorKitchen schema if it doesn't currently exist.
 func createSchema(db *pg.DB, removeExistingTables bool) error {
 
-	orm.RegisterTable((*RecipeToIngredient)(nil))
+	//	orm.RegisterTable((*RecipeIngredient)(nil))
 
 	models := []interface{}{
 		(*Ingredient)(nil),
 		(*Recipe)(nil),
-		(*RecipeToIngredient)(nil),
+		(*RecipeIngredient)(nil),
 	}
 
 	for _, model := range models {

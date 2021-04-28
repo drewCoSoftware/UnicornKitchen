@@ -37,4 +37,20 @@ func main() {
 	// database.CreateDatabase()
 	database.CreateTables(true)
 	database.AddDefaultData()
+
+	//	Let's create a new recipe, and add the data, all in one go.
+	r1 := &database.Recipe{
+		Name: "Electric Potato",
+	}
+	r1.Ingredients = []database.RecipeIngredient{
+		{
+			Recipe:           r1,
+			Ingredient:       &database.Ingredient{Name: "Potato"},
+			IngredientAmount: "1",
+		},
+	}
+
+	db := database.GetConnection()
+	database.SaveRecipe(db, r1)
+
 }

@@ -6,14 +6,14 @@ type Ingredient struct {
 }
 
 type Recipe struct {
-	Id         int64
-	Name       string               `pg:",unique,notnull"`
-	Ingredient []RecipeToIngredient `pg:"many2many:recipe_to_ingredients"`
+	Id          int64
+	Name        string             `pg:",unique,notnull"`
+	Ingredients []RecipeIngredient `pg:"rel:has-many"`
 }
 
-type RecipeToIngredient struct {
+type RecipeIngredient struct {
 	Id               int64
-	RecipeId         int64
-	IngredientId     int64
+	Recipe           *Recipe     `pg:"rel:has-one"`
+	Ingredient       *Ingredient `pg:"rel:has-one"`
 	IngredientAmount string
 }
