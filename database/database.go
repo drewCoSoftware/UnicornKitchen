@@ -51,18 +51,22 @@ func AddDefaultData() {
 	i1 := &Ingredient{
 		Name: "Potato",
 	}
+	insertData(db, i1)
 
-	recipeIngredient := &IngredientEntry{
-		Ingredient: i1,
-		Amount:     "1",
-	}
+	// Let's create a new recipe, and add the data, all in one go.
 
-	r1 := &Recipe{
-		Name:        "Volts",
-		Ingredients: []*IngredientEntry{recipeIngredient},
-	}
+	// recipeIngredient := &IngredientEntry{
+	// 	Ingredient: i1,
+	// 	Amount:     "1",
+	// }
 
-	insertData(db, r1)
+	///	insertData(db, recipeIngredient)
+	// r1 := &Recipe{
+	// 	Name:        "Volts",
+	// 	Ingredients: []*IngredientEntry{recipeIngredient},
+	// }
+
+	//	insertData(db, r1)
 
 }
 
@@ -102,10 +106,12 @@ func dbExists(db *pg.DB, dbName string) (bool, error) {
 // Create the UnicorKitchen schema if it doesn't currently exist.
 func createSchema(db *pg.DB, removeExistingTables bool) error {
 
+	orm.RegisterTable((*RecipeToIngredient)(nil))
+
 	models := []interface{}{
 		(*Ingredient)(nil),
-		(*IngredientEntry)(nil),
 		(*Recipe)(nil),
+		(*RecipeToIngredient)(nil),
 	}
 
 	for _, model := range models {
@@ -113,6 +119,7 @@ func createSchema(db *pg.DB, removeExistingTables bool) error {
 		if removeExistingTables {
 			db.Model(model).DropTable(&orm.DropTableOptions{
 				IfExists: true,
+				Cascade:  true,
 			})
 		}
 
