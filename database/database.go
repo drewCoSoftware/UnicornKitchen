@@ -1,14 +1,10 @@
 package database
 
 import (
-	//	"fmt"
-
 	"fmt"
-	"os"
-
+	"github.com/drewCoSoftware/UnicornKitchen/settings"
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
-	//	"github.com/go-pg/pg/v10/orm"
 )
 
 func CreateDatabase() {
@@ -16,7 +12,7 @@ func CreateDatabase() {
 	defer db.Close()
 
 	// Let's make the Database first...
-	exists, err := dbExists(db, DB_NAME)
+	exists, err := dbExists(db, settings.DB_NAME)
 	if err != nil {
 		fmt.Println("There was an error checking for the database!")
 		fmt.Println(err.Error())
@@ -40,35 +36,45 @@ func CreateDatabase() {
 }
 
 func GetConnection() *pg.DB {
-	// addr := os.Getenv("DB_ADDR")
-	// user := os.Getenv()
-
-	res := pg.Connect(&pg.Options{
-		// NOTE: This is dev data.  In real life, one would use 'secrets' from their container or server provider.
-		User:     "postgres",
-		Password: "abc123",
-		Database: DB_NAME,
-	})
+	res := pg.Connect(settings.GetDatabaseOptions())
 	return res
 }
 
 func AddDefaultData() {
-	db := getConnection()
+	fmt.Println("Adding some default data....")
+
+	db := GetConnection()
 	defer db.Close()
 
-	fmt.Println("adding a potato...")
-
+	// NOTE: A string list or input file would be a good idea...
+	// Maybe just a json file?
 	i1 := &Ingredient{
 		Name: "Potato",
 	}
-	_, err := db.Model(i1).Insert()
+
+	recipeIngredient := &IngredientEntry{
+		Ingredient: i1,
+		Amount:     "1",
+	}
+
+	r1 := &Recipe{
+		Name:        "Volts",
+		Ingredients: []*IngredientEntry{recipeIngredient},
+	}
+
+	insertData(db, r1)
+
+}
+
+func insertData(db *pg.DB, data interface{}) {
+	_, err := db.Model(data).Insert()
 	if err != nil {
 		panic(err)
 	}
 }
 
 func CreateTables(removeExisting bool) {
-	db := getConnection()
+	db := GetConnection()
 	defer db.Close()
 
 	// We could do some stuff here.....
@@ -98,6 +104,7 @@ func createSchema(db *pg.DB, removeExistingTables bool) error {
 
 	models := []interface{}{
 		(*Ingredient)(nil),
+		(*IngredientEntry)(nil),
 		(*Recipe)(nil),
 	}
 
@@ -110,8 +117,9 @@ func createSchema(db *pg.DB, removeExistingTables bool) error {
 		}
 
 		err := db.Model(model).CreateTable(&orm.CreateTableOptions{
-			Temp:        false,
-			IfNotExists: true,
+			Temp:          false,
+			IfNotExists:   true,
+			FKConstraints: true,
 		})
 		if err != nil {
 			return err

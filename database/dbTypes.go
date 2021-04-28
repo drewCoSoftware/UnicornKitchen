@@ -1,15 +1,24 @@
 package database
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Ingredient struct {
 	Id   int64
-	Name string `pg:",unique"`
+	Name string `pg:",unique,notnull"`
 }
 
 type Recipe struct {
-	Id   int64
-	Name string `pg:",unique"`
+	Id          int64
+	Name        string `pg:",unique,notnull"`
+	Ingredients []*IngredientEntry
+}
+
+type IngredientEntry struct {
+	Id         int64
+	Ingredient *Ingredient
+	Amount     string // Quantities are encoded as strings.  i.e. '1' - '25mL' - '0.25#' and so on.  Not 100% ideal, but will do the trick for now.
 }
 
 // These are just type aliases.....
@@ -19,6 +28,8 @@ type (
 )
 
 func GetThing() (x int, y string) {
+	//	decimal.De
+	//	decimal.
 	// res := &struct{
 	// 	number = 100
 	// }

@@ -17,3 +17,8 @@
 #MAC + Build BS
 *.DS_Store
 UnicornKitchen
+
+# push scripts / other secret stuff.
+push-to-aws.sh
+*.pem
+
