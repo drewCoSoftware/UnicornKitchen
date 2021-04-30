@@ -1,18 +1,25 @@
 package settings
 
 import (
-	"github.com/go-pg/pg/v10"
+	//	"github.com/go-pg/pg/v10"
 	"os"
 )
 
 const DB_NAME string = "unicornkitchen"
 
-func GetDatabaseOptions() *pg.Options {
-	res := &pg.Options{
+type DBOptions struct {
+	User     string
+	Password string
+	Database string
+	Address  string // Full address, including the port.
+}
+
+func GetDatabaseOptions() *DBOptions {
+	res := &DBOptions{
 		User:     envVar("DB_USER", "postgres"),
 		Password: envVar("DB_PASS", "abc123"), // Or a secrets manager...
 		Database: envVar("DB_NAME", DB_NAME),
-		Addr:     os.Getenv("DB_ADDRESS"), // Empty string is default..
+		Address:  envVar("DB_ADDRESS", "localhost"),
 	}
 
 	return res

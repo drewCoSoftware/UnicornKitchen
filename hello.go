@@ -6,6 +6,7 @@ import (
 	//"github.com/drewCoSoftware/UnicornKitchen/settings"
 	// "os"
 	"github.com/drewCoSoftware/UnicornKitchen/database"
+	"github.com/drewCoSoftware/UnicornKitchen/settings"
 	// "github.com/drewCoSoftware/UnicornKitchen/ingredients"
 	//	"github.com/go-pg/pg/v10"
 	//	"github.com/go-pg/pg/v10/orm"
@@ -16,6 +17,20 @@ import (
 func main() {
 	fmt.Println("What's cookin' in the Unicorn Kitchen?")
 
+	//	db := database.
+	fmt.Println("Checking for the database....")
+	hasDB, err := database.DbExists(settings.DB_NAME)
+	if err != nil {
+		panic(err)
+	}
+
+	// Gee, a ternary sure would be nice here......
+	tf := "false"
+	if hasDB {
+		tf = "true"
+	}
+
+	fmt.Println(fmt.Sprintf("The database %s exists? (%s)", settings.DB_NAME, tf))
 	// As a sanity check, I am going to print the db settings, which should use
 	// the environment variables from the server....
 	// s := settings.GetDatabaseOptions()
@@ -35,8 +50,8 @@ func main() {
 
 	// We want to create our database resources if they don't currently exist.
 	// database.CreateDatabase()
-	database.CreateTables(true)
-	database.AddDefaultData()
+	// database.CreateTables(true)
+	// database.AddDefaultData()
 
 	//	Let's create a new recipe, and add the data, all in one go.
 	r1 := &database.Recipe{
@@ -50,7 +65,7 @@ func main() {
 		},
 	}
 
-	db := database.GetConnection()
-	database.SaveRecipe(db, r1)
+	// db := database.GetConnection()
+	// database.SaveRecipe(db, r1)
 
 }
