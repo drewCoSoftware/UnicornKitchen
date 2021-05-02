@@ -6,7 +6,7 @@ import (
 	//"github.com/drewCoSoftware/UnicornKitchen/settings"
 	// "os"
 	"github.com/drewCoSoftware/UnicornKitchen/database"
-	"github.com/drewCoSoftware/UnicornKitchen/settings"
+	//	"github.com/drewCoSoftware/UnicornKitchen/settings"
 	// "github.com/drewCoSoftware/UnicornKitchen/ingredients"
 	//	"github.com/go-pg/pg/v10"
 	//	"github.com/go-pg/pg/v10/orm"
@@ -17,20 +17,22 @@ import (
 func main() {
 	fmt.Println("What's cookin' in the Unicorn Kitchen?")
 
+	database.CreateDatabase()
+
 	//	db := database.
-	fmt.Println("Checking for the database....")
-	hasDB, err := database.DbExists(settings.DB_NAME)
-	if err != nil {
-		panic(err)
-	}
+	// fmt.Println("Checking for the database....")
+	// hasDB, err := database.DbExists(settings.DB_NAME)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	// Gee, a ternary sure would be nice here......
-	tf := "false"
-	if hasDB {
-		tf = "true"
-	}
+	// // Gee, a ternary sure would be nice here......
+	// tf := "false"
+	// if hasDB {
+	// 	tf = "true"
+	// }
 
-	fmt.Println(fmt.Sprintf("The database %s exists? (%s)", settings.DB_NAME, tf))
+	// fmt.Println(fmt.Sprintf("The database %s exists? (%s)", settings.DB_NAME, tf))
 	// As a sanity check, I am going to print the db settings, which should use
 	// the environment variables from the server....
 	// s := settings.GetDatabaseOptions()
