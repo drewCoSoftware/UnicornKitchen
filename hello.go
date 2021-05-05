@@ -17,7 +17,8 @@ import (
 func main() {
 	fmt.Println("What's cookin' in the Unicorn Kitchen?")
 
-	// database.CreateDatabase()
+	database.CreateDatabase()
+
 	potato := &database.Ingredient{
 		Name:        "potato",
 		Description: "A starchy tuber!",
@@ -28,10 +29,17 @@ func main() {
 	r1 := &database.Recipe{
 		Name:        "Electric Potato",
 		Description: "Create some volts from a potato, lemon and other common ingredients.",
+		Yield: &database.RecipeYield{
+			Amount: "0.5",
+			Ingredient: &database.Ingredient{
+				Name:        "Volt",
+				Description: "A unit of potential electrical energy.",
+			},
+		},
 	}
 	r1.Ingredients = []*database.RecipeIngredient{
 		{
-			Ingredient:       &database.Ingredient{Name: "Potato"},
+			Ingredient:       potato,
 			IngredientAmount: "1",
 		},
 		{

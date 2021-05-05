@@ -1,10 +1,8 @@
 package database
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/drewCoSoftware/UnicornKitchen/settings"
@@ -55,36 +53,47 @@ func OpenConnection(connectionString string) *sql.DB {
 }
 
 func AddIngredient(ingredient *Ingredient) {
-	i := GetIngredient(ingredient.Name)
+	// db := Connect()
+	// defer db.Close()
+	exec := CreateExecutor(Connect, nil)
+	defer exec.Complete()
+
+	addIngredientInternal(exec, ingredient)
+
+}
+
+func addIngredientInternal(exec *dbExecutor, ingredient *Ingredient) {
+	i := getIngredientInternal(exec, ingredient.Name)
+
 	if i == nil {
-		fmt.Println("Adding the new ingredient...")
+		fmt.Println("Adding the ingredient " + ingredient.Name)
+		query := "INSERT INTO ingredients (Name, Description) VALUES ($1,$2)"
 
-		db := Connect()
-		defer db.Close()
-
-		addIngredientInternal(db, ingredient)
-
+		_, err := exec.Exec(query, ingredient.Name, ingredient.Description)
+		if err != nil {
+			panic(err)
+		}
 	} else {
 		fmt.Println("The ingredient '" + ingredient.Name + "' already exists!")
 	}
 }
 
-func addIngredientInternal(db *sql.DB, ingredient *Ingredient) {
-	query := "INSERT INTO ingredients (Name, Description) VALUES ($1,$2)"
-	_, err := db.Exec(query, ingredient.Name, ingredient.Description)
-	if err != nil {
-		panic(err)
-	}
+// NOTE: We aren't doing anything about case insensitive search at this time.  Ideally we would
+// create a case-insenstive unique index and then perform LOWER checks on name and $1.
+// For the purposes of this toy applicaiton, we can live without the additional complexity.
+func GetIngredient(name string) *Ingredient {
+	exec := CreateExecutor(Connect, nil)
+	defer exec.Complete()
 
-	fmt.Println("Added the ingredient: " + ingredient.Name)
+	return getIngredientInternal(exec, name)
 }
 
-func GetIngredient(name string) *Ingredient {
-	db := Connect()
-	defer db.Close()
+func getIngredientInternal(exec *dbExecutor, name string) *Ingredient {
 
 	query := "SELECT Name, Description FROM ingredients WHERE Name = $1"
-	rows, err := db.Query(query, name)
+	rows, err := exec.Query(query, name)
+	defer rows.Close()
+
 	if err != nil {
 		panic(err)
 	}
@@ -110,49 +119,33 @@ func AddRecipe(recipe *Recipe) {
 
 	fmt.Println("Adding the recipe: " + recipe.Name)
 
+	// Set the appropriate refs + validate data (incomplete at this time.)
+	validateRecioe(recipe)
+
+	exec := CreateExecutor(Connect, &sql.TxOptions{ReadOnly: false})
+	defer exec.Complete()
+
+	// Add All Ingredients first.
 	for x := range recipe.Ingredients {
-		recipe.Ingredients[x].Recipe = recipe
+		addIngredientInternal(exec, recipe.Ingredients[x].Ingredient)
 	}
 
-	ctx := context.Background()
+	// Add the yield ingredient as well...
+	addIngredientInternal(exec, recipe.Yield.Ingredient)
 
-	db := Connect()
-	defer db.Close()
-
-	txOK := false
-	tx, txErr := db.BeginTx(ctx, &sql.TxOptions{ReadOnly: false})
-	if txErr != nil {
-		panic(txErr)
-	}
-	defer completeTx(tx, txOK)
-
-	for x := range recipe.Ingredients {
-		name := recipe.Ingredients[x].Ingredient.Name
-
-		fmt.Println("Adding new ingredient: " + name)
-		i := GetIngredient(name)
-		if i == nil {
-			addIngredientInternal(db, recipe.Ingredients[x].Ingredient)
-		}
-	}
-
-	// TODO: Add the recipe to the DB + all of the ingredient mappings.
-
-	txOK = true
+	// If we don't flag the executor as being OK, then the transaction
+	// won't get committed...
+	exec.SetTransationFlag(true)
 
 }
 
-func completeTx(tx *sql.Tx, txOK bool) {
-	if !txOK {
-		rollBackErr := tx.Rollback()
-		if rollBackErr != nil {
-			log.Fatal(rollBackErr)
-		}
-	} else {
-		commitErr := tx.Commit()
-		if commitErr != nil {
-			log.Fatal(commitErr)
-		}
+// NOTE: This validation is very basic....
+func validateRecioe(recipe *Recipe) {
+	if recipe.Yield == nil {
+		panic("There is no yield ingredient listed!")
+	}
+	for x := range recipe.Ingredients {
+		recipe.Ingredients[x].Recipe = recipe
 	}
 }
 
@@ -209,59 +202,6 @@ func getPostGresDB() *sql.DB {
 	cs := getConnectionString(ops)
 	db := OpenConnection(cs)
 	return db
-}
-
-func dropTable(db *sql.DB, name string) {
-	query := "DROP TABLE IF EXISTS " + name
-	_, err := db.Exec(query)
-	if err != nil {
-		panic(err)
-	}
-}
-
-// // Create the UnicorKitchen schema if it doesn't currently exist.
-func createSchema(removeExistingTables bool) {
-
-	db := Connect()
-	defer db.Close()
-
-	if removeExistingTables {
-		fmt.Println("The old tables will be removed.")
-		dropTable(db, "recipe_ingredients")
-		dropTable(db, "ingredients")
-		dropTable(db, "recipes")
-	}
-
-	// NOTE: Reflection would be cool, but that makes it more difficult to make
-	// our otherwise simple tables.
-	fmt.Println("Creating table for 'ingredients'.")
-	query := `CREATE TABLE ingredients ( IngredientId BIGSERIAL PRIMARY KEY,
-										 Name VARCHAR NOT NULL UNIQUE, 
-										 Description VARCHAR NULL )`
-
-	exec(db, query, false)
-
-	fmt.Println("Creating table for 'recipes'")
-	query = `CREATE TABLE recipes ( RecipeId BIGSERIAL PRIMARY KEY,
-									Name VARCHAR NOT NULL UNIQUE,
-									Description VARCHAR NULL,
-									YieldAmount VARCHAR,
-									YieldIngredientId BIGINT NOT NULL REFERENCES ingredients on DELETE CASCADE )`
-
-	exec(db, query, false)
-
-	fmt.Println("Creating table 'recipe_ingredients'")
-	query = `CREATE TABLE recipe_ingredients ( 
-				Id BIGSERIAL PRIMARY KEY,
-				RecipeId BIGINT NOT NULL REFERENCES recipes ON DELETE CASCADE,
-				IngredientId BIGINT NOT NULL REFERENCES ingredients ON DELETE CASCADE,
-				Amount VARCHAR NOT NULL
-					--, FOREIGN KEY(RecipeId) REFERENCES recipes (RecipeId)
-					--, FOREIGN KEY(IngredientId) REFERENCES ingredients (IngredientId)
-				) -- NOTE: It appears that PostGres will auto-create the FK refs as a result of the DELETE CASCADEs mentioned above.
-				  -- I have left the explicit FK syntax in place so that one might contemplate the differences.`
-
-	exec(db, query, false)
 }
 
 func exec(db *sql.DB, query string, confirm bool) {

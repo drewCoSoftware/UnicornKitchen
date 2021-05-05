@@ -22,8 +22,8 @@ func createSchema(removeExistingTables bool) {
 	if removeExistingTables {
 		fmt.Println("The old tables will be removed.")
 		dropTable(db, "recipe_ingredients")
-		dropTable(db, "ingredients")
 		dropTable(db, "recipes")
+		dropTable(db, "ingredients")
 	}
 
 	// NOTE: Reflection would be cool, but that makes it more difficult to make
@@ -39,7 +39,7 @@ func createSchema(removeExistingTables bool) {
 	query = `CREATE TABLE recipes ( RecipeId BIGSERIAL PRIMARY KEY,
 									Name VARCHAR NOT NULL UNIQUE,
 									Description VARCHAR NULL,
-									YieldAmount VARCHAR,
+									YieldAmount VARCHAR NOT NULL,
 									YieldIngredientId BIGINT NOT NULL REFERENCES ingredients on DELETE CASCADE )`
 
 	exec(db, query, false)
