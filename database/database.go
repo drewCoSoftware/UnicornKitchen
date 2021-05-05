@@ -1,8 +1,10 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/drewCoSoftware/UnicornKitchen/settings"
@@ -51,6 +53,120 @@ func OpenConnection(connectionString string) *sql.DB {
 	}
 	return res
 }
+
+func AddIngredient(ingredient *Ingredient) {
+	i := GetIngredient(ingredient.Name)
+	if i == nil {
+		fmt.Println("Adding the new ingredient...")
+
+		db := Connect()
+		defer db.Close()
+
+		addIngredientInternal(db, ingredient)
+
+	} else {
+		fmt.Println("The ingredient '" + ingredient.Name + "' already exists!")
+	}
+}
+
+func addIngredientInternal(db *sql.DB, ingredient *Ingredient) {
+	query := "INSERT INTO ingredients (Name, Description) VALUES ($1,$2)"
+	_, err := db.Exec(query, ingredient.Name, ingredient.Description)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Added the ingredient: " + ingredient.Name)
+}
+
+func GetIngredient(name string) *Ingredient {
+	db := Connect()
+	defer db.Close()
+
+	query := "SELECT Name, Description FROM ingredients WHERE Name = $1"
+	rows, err := db.Query(query, name)
+	if err != nil {
+		panic(err)
+	}
+
+	// We should have one or none....
+	hasMatch := rows.Next()
+	if !hasMatch {
+		return nil
+	}
+
+	// Deserialize the ingredient.....
+	var i Ingredient
+	scanErr := rows.Scan(&i.Name, &i.Description)
+	if scanErr != nil {
+		panic(scanErr)
+	}
+
+	return &i
+}
+
+// Add a recipe to the database, saving new ingredients, etc. as we go.
+func AddRecipe(recipe *Recipe) {
+
+	fmt.Println("Adding the recipe: " + recipe.Name)
+
+	for x := range recipe.Ingredients {
+		recipe.Ingredients[x].Recipe = recipe
+	}
+
+	ctx := context.Background()
+
+	db := Connect()
+	defer db.Close()
+
+	txOK := false
+	tx, txErr := db.BeginTx(ctx, &sql.TxOptions{ReadOnly: false})
+	if txErr != nil {
+		panic(txErr)
+	}
+	defer completeTx(tx, txOK)
+
+	for x := range recipe.Ingredients {
+		name := recipe.Ingredients[x].Ingredient.Name
+
+		fmt.Println("Adding new ingredient: " + name)
+		i := GetIngredient(name)
+		if i == nil {
+			addIngredientInternal(db, recipe.Ingredients[x].Ingredient)
+		}
+	}
+
+	// TODO: Add the recipe to the DB + all of the ingredient mappings.
+
+	txOK = true
+
+}
+
+func completeTx(tx *sql.Tx, txOK bool) {
+	if !txOK {
+		rollBackErr := tx.Rollback()
+		if rollBackErr != nil {
+			log.Fatal(rollBackErr)
+		}
+	} else {
+		commitErr := tx.Commit()
+		if commitErr != nil {
+			log.Fatal(commitErr)
+		}
+	}
+}
+
+func query(db *sql.DB, query string) *sql.Rows {
+	res, err := db.Query(query)
+	if err != nil {
+		panic(err)
+	}
+	return res
+}
+
+// func AddRecipe(*Recipe recipe){
+
+// }
 
 func getConnectionString(ops *settings.DBOptions) string {
 	fmtString := "port=%s host=%s user=%s password=%s dbname=%s sslmode=disable"
@@ -128,7 +244,9 @@ func createSchema(removeExistingTables bool) {
 	fmt.Println("Creating table for 'recipes'")
 	query = `CREATE TABLE recipes ( RecipeId BIGSERIAL PRIMARY KEY,
 									Name VARCHAR NOT NULL UNIQUE,
-									Description VARCHAR NULL )`
+									Description VARCHAR NULL,
+									YieldAmount VARCHAR,
+									YieldIngredientId BIGINT NOT NULL REFERENCES ingredients on DELETE CASCADE )`
 
 	exec(db, query, false)
 

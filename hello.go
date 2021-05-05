@@ -17,57 +17,41 @@ import (
 func main() {
 	fmt.Println("What's cookin' in the Unicorn Kitchen?")
 
-	database.CreateDatabase()
-
-	//	db := database.
-	// fmt.Println("Checking for the database....")
-	// hasDB, err := database.DbExists(settings.DB_NAME)
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// // Gee, a ternary sure would be nice here......
-	// tf := "false"
-	// if hasDB {
-	// 	tf = "true"
-	// }
-
-	// fmt.Println(fmt.Sprintf("The database %s exists? (%s)", settings.DB_NAME, tf))
-	// As a sanity check, I am going to print the db settings, which should use
-	// the environment variables from the server....
-	// s := settings.GetDatabaseOptions()
-
-	// fmt.Println("Address = " + s.Addr)
-	// fmt.Println("db name = " + s.Database)
-	// fmt.Println("db user = " + s.User)
-
-	// dbCfg := os.Getenv("DB_CONFIG_PATH")
-	// if dbCfg == "" {
-	// 	dbCfg = "local-db-cfg.json"
-	// }
-
-	// fmt.Println("The database cfg is: '" + dbCfg + "'")
-	// hasFish := ingredients.HasIngredient("fish")
-	// fmt.Println(fmt.Sprintf("has fish?: %t", hasFish))
-
-	// We want to create our database resources if they don't currently exist.
 	// database.CreateDatabase()
-	// database.CreateTables(true)
-	// database.AddDefaultData()
+	potato := &database.Ingredient{
+		Name:        "potato",
+		Description: "A starchy tuber!",
+	}
+	database.AddIngredient(potato)
 
 	//	Let's create a new recipe, and add the data, all in one go.
 	r1 := &database.Recipe{
-		Name: "Electric Potato",
+		Name:        "Electric Potato",
+		Description: "Create some volts from a potato, lemon and other common ingredients.",
 	}
-	r1.Ingredients = []database.RecipeIngredient{
+	r1.Ingredients = []*database.RecipeIngredient{
 		{
-			Recipe:           r1,
 			Ingredient:       &database.Ingredient{Name: "Potato"},
 			IngredientAmount: "1",
 		},
+		{
+			Ingredient:       &database.Ingredient{Name: "Penny"},
+			IngredientAmount: "1",
+		},
+		{
+			Ingredient:       &database.Ingredient{Name: "Galvanized Iron Nail"},
+			IngredientAmount: "1",
+		},
+		{
+			Ingredient:       &database.Ingredient{Name: "18ga Copper Wire"},
+			IngredientAmount: "6 Inches",
+		},
+		{
+			Ingredient:       &database.Ingredient{Name: "Alligator Clip"},
+			IngredientAmount: "2",
+		},
 	}
 
-	// db := database.GetConnection()
-	// database.SaveRecipe(db, r1)
+	database.AddRecipe(r1)
 
 }
