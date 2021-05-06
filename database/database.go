@@ -63,9 +63,7 @@ func AddIngredient(ingredient *Ingredient) {
 }
 
 func addIngredientInternal(exec *dbExecutor, ingredient *Ingredient) {
-	i := getIngredientInternal(exec, ingredient.Name)
-
-	if i == nil {
+	if !hasIngredient(exec, ingredient.Name) {
 		fmt.Println("Adding the ingredient " + ingredient.Name)
 		query := "INSERT INTO ingredients (Name, Description) VALUES ($1,$2)"
 
@@ -88,9 +86,31 @@ func GetIngredient(name string) *Ingredient {
 	return getIngredientInternal(exec, name)
 }
 
+func getRecipeInternal(exec *dbExecutor, name string) *Recipe {
+
+	// NOTE: This query will need to have joins and stuff.
+	// NOTE: I am sure that a proper string builder is a better way vs. concatenation which no
+	// doubt creates a bunch of garbage along the way...
+	query := "SELECT RecipeId, Name, Description FROM recipes WHERE Name = $1"
+
+	rows, err := exec.Query(query, name)
+	if err != nil {
+		panic(err)
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		return nil
+	}
+
+	res := &Recipe{}
+	rows.Scan(&res.Id, &res.Name, &res.Description)
+	return res
+}
+
 func getIngredientInternal(exec *dbExecutor, name string) *Ingredient {
 
-	query := "SELECT Name, Description FROM ingredients WHERE Name = $1"
+	query := "SELECT IngredientId, Name, Description FROM ingredients WHERE Name = $1"
 	rows, err := exec.Query(query, name)
 	defer rows.Close()
 
@@ -105,13 +125,48 @@ func getIngredientInternal(exec *dbExecutor, name string) *Ingredient {
 	}
 
 	// Deserialize the ingredient.....
-	var i Ingredient
-	scanErr := rows.Scan(&i.Name, &i.Description)
+	res := &Ingredient{}
+	scanErr := rows.Scan(&res.Id, &res.Name, &res.Description)
 	if scanErr != nil {
 		panic(scanErr)
 	}
 
-	return &i
+	return res
+}
+
+func HasIngredient(name string) bool {
+	exec := CreateExecutor(Connect, nil)
+	defer exec.Complete()
+	return hasIngredient(exec, name)
+}
+
+func hasIngredient(exec *dbExecutor, name string) bool {
+	return checkExists(exec, "ingredients", "Name", name)
+}
+
+func GetRecipe(name string) *Recipe {
+	exec := CreateExecutor(Connect, nil)
+	defer exec.Complete()
+
+	return getRecipeInternal(exec, name)
+}
+
+// Determines if data exists on the given table where the column name/value pair matches.
+func checkExists(exec *dbExecutor, tableName string, colName string, colVal string) bool {
+	query := "SELECT " + colName + " FROM " + tableName + " WHERE " + colName + " = $1"
+	rows, err := exec.Query(query, colVal)
+	defer rows.Close()
+
+	checkErr(err)
+
+	res := rows.Next()
+	return res
+}
+
+func checkErr(err error) {
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Add a recipe to the database, saving new ingredients, etc. as we go.
@@ -119,19 +174,33 @@ func AddRecipe(recipe *Recipe) {
 
 	fmt.Println("Adding the recipe: " + recipe.Name)
 
+	if GetRecipe(recipe.Name) != nil {
+		fmt.Println("The recipe " + recipe.Name + " already exists.  This will not be added!")
+		return
+	}
+
 	// Set the appropriate refs + validate data (incomplete at this time.)
-	validateRecioe(recipe)
+	validateRecipe(recipe)
 
 	exec := CreateExecutor(Connect, &sql.TxOptions{ReadOnly: false})
 	defer exec.Complete()
 
-	// Add All Ingredients first.
-	for x := range recipe.Ingredients {
-		addIngredientInternal(exec, recipe.Ingredients[x].Ingredient)
-	}
-
 	// Add the yield ingredient as well...
 	addIngredientInternal(exec, recipe.Yield.Ingredient)
+
+	// Now the recipe entry....
+	addRecipeInternal(exec, recipe)
+	dbr := getRecipeInternal(exec, recipe.Name)
+	if dbr == nil {
+		panic(fmt.Sprintf("Could not find the recipe with name: %s", recipe.Name))
+	}
+
+	// Now all of the ingredient refs...
+	for x := range recipe.Ingredients {
+		ri := recipe.Ingredients[x]
+		addIngredientInternal(exec, ri.Ingredient)
+		addIngredientRef(exec, dbr.Id, ri)
+	}
 
 	// If we don't flag the executor as being OK, then the transaction
 	// won't get committed...
@@ -139,8 +208,41 @@ func AddRecipe(recipe *Recipe) {
 
 }
 
+// Associates an ingredient, and an amount with the given recipe.
+func addIngredientRef(exec *dbExecutor, recipeId int64, recipeIngredient *RecipeIngredient) {
+	dbi := getIngredientInternal(exec, recipeIngredient.Ingredient.Name)
+	if dbi == nil {
+		panic(fmt.Sprintf("Could not find the ingredient with name: %s", recipeIngredient.Ingredient.Name))
+	}
+
+	query := "INSERT INTO recipe_ingredients (RecipeId, IngredientId, Amount) VALUES ($1, $2, $3)"
+	_, err := exec.Exec(query, recipeId, dbi.Id, recipeIngredient.IngredientAmount)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func addRecipeInternal(exec *dbExecutor, recipe *Recipe) {
+
+	fmt.Println("Adding the recipe " + recipe.Name)
+	query := "INSERT INTO recipes (Name, Description, YieldAmount, YieldIngredientId) VALUES ($1,$2,$3,$4)"
+
+	yieldIngredient := getIngredientInternal(exec, recipe.Yield.Ingredient.Name)
+	if yieldIngredient == nil {
+		panic("There is no dabase entry for the yield ingredient!")
+	}
+
+	_, err := exec.Exec(query, recipe.Name, recipe.Description, recipe.Yield.Amount, yieldIngredient.Id)
+	if err != nil {
+		panic(err)
+	} else {
+		fmt.Println("The recipe '" + recipe.Name + "' already exists!")
+	}
+
+}
+
 // NOTE: This validation is very basic....
-func validateRecioe(recipe *Recipe) {
+func validateRecipe(recipe *Recipe) {
 	if recipe.Yield == nil {
 		panic("There is no yield ingredient listed!")
 	}
@@ -156,10 +258,6 @@ func query(db *sql.DB, query string) *sql.Rows {
 	}
 	return res
 }
-
-// func AddRecipe(*Recipe recipe){
-
-// }
 
 func getConnectionString(ops *settings.DBOptions) string {
 	fmtString := "port=%s host=%s user=%s password=%s dbname=%s sslmode=disable"

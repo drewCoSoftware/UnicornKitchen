@@ -2,17 +2,8 @@ package main
 
 import (
 	"fmt"
-
-	//"github.com/drewCoSoftware/UnicornKitchen/settings"
-	// "os"
 	"github.com/drewCoSoftware/UnicornKitchen/database"
-	//	"github.com/drewCoSoftware/UnicornKitchen/settings"
-	// "github.com/drewCoSoftware/UnicornKitchen/ingredients"
-	//	"github.com/go-pg/pg/v10"
-	//	"github.com/go-pg/pg/v10/orm"
 )
-
-//import "github.com/google/go-cmp/cmp"
 
 func main() {
 	fmt.Println("What's cookin' in the Unicorn Kitchen?")
@@ -20,7 +11,7 @@ func main() {
 	database.CreateDatabase()
 
 	potato := &database.Ingredient{
-		Name:        "potato",
+		Name:        "Potato",
 		Description: "A starchy tuber!",
 	}
 	database.AddIngredient(potato)
@@ -61,5 +52,8 @@ func main() {
 	}
 
 	database.AddRecipe(r1)
+
+	// Complete the recipe adding code...
+	// Find a way to define the recipes in a JSON file to make adding the default data less verbose.
 
 }
