@@ -1,0 +1,24 @@
+{
+    "Name" : "Mashed Potatoes",
+    "Description": "Potatoes that have been boiled and mashed.",
+    "Yield": {
+        "Amount": "6 Cups",
+        "Ingredient": { "Name": "Mashed Potatoes" }
+    },
+    "Ingredients": [
+        {
+            "Ingredient": {
+                "Name": "Potato"
+            },
+            "IngredientAmount": "4"
+        },
+        {
+            "Ingredient": { "Name": "Butter" },
+            "IngredientAmount": "4 tbsp."
+        },
+        {
+            "Ingredient": { "Name": "Whole Milk" },
+            "IngredientAmount": "1/2 Cup"
+        }
+    ]
+}

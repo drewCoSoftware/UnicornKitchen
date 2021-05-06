@@ -1,7 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+
 	"github.com/drewCoSoftware/UnicornKitchen/database"
 )
 
@@ -52,6 +55,25 @@ func main() {
 	}
 
 	database.AddRecipe(r1)
+
+	// Let's pull a recipe from file and add it that way...
+	file, err := os.Open("data/default-data.json")
+	if err != nil {
+		panic(err)
+	}
+	//	file.Stat()
+	defer file.Close()
+
+	dec := json.NewDecoder(file)
+	var r2 database.Recipe
+	if decodeErr := dec.Decode(&r2); decodeErr != nil {
+		panic(decodeErr)
+	}
+
+	database.AddRecipe(&r2)
+
+	//	file.read
+	//	defer file.Close()
 
 	// Complete the recipe adding code...
 	// Find a way to define the recipes in a JSON file to make adding the default data less verbose.
