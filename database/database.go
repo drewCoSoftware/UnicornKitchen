@@ -91,7 +91,11 @@ func getRecipeInternal(exec *dbExecutor, name string) *Recipe {
 	// NOTE: This query will need to have joins and stuff.
 	// NOTE: I am sure that a proper string builder is a better way vs. concatenation which no
 	// doubt creates a bunch of garbage along the way...
-	query := "SELECT RecipeId, Name, Description FROM recipes WHERE Name = $1"
+	query := `SELECT ri.ingredientid, i.Name, ri.amount
+		      	FROM recipe_ingredients AS ri
+			  	INNER JOIN recipes AS r on r.recipeid = ri.recipeid
+			  	INNER JOIN ingredients as i on i.ingredientid = ri.ingredientid
+				WHERE r.name = $1`
 
 	rows, err := exec.Query(query, name)
 	if err != nil {
@@ -99,12 +103,30 @@ func getRecipeInternal(exec *dbExecutor, name string) *Recipe {
 	}
 	defer rows.Close()
 
-	if !rows.Next() {
+	res := &Recipe{}
+
+	// We have ingredient data, so let's read it all in.
+	for rows.Next() {
+
+		ri := &RecipeIngredient{
+			Ingredient: &Ingredient{},
+		}
+		rows.Scan(&ri.Ingredient.Id, &ri.Ingredient.Name, &ri.IngredientAmount)
+
+		// NOTE: There is probably a better way to do this.  This looks like
+		// it will create a lot of garbage....
+		res.Ingredients = append(res.Ingredients, ri)
+	}
+
+	// Now we can get the basic recipe data that we care about...
+	query = "SELECT recipeid, name FROM recipes WHERE Name = $1"
+	row := exec.QueryRow(query, name)
+
+	err = row.Scan(&res.Id, &res.Name)
+	if err != nil {
 		return nil
 	}
 
-	res := &Recipe{}
-	rows.Scan(&res.Id, &res.Name, &res.Description)
 	return res
 }
 
@@ -224,7 +246,7 @@ func addIngredientRef(exec *dbExecutor, recipeId int64, recipeIngredient *Recipe
 
 func addRecipeInternal(exec *dbExecutor, recipe *Recipe) {
 
-	fmt.Println("Adding the recipe " + recipe.Name)
+	// fmt.Println("Adding the recipe " + recipe.Name)
 	query := "INSERT INTO recipes (Name, Description, YieldAmount, YieldIngredientId) VALUES ($1,$2,$3,$4)"
 
 	yieldIngredient := getIngredientInternal(exec, recipe.Yield.Ingredient.Name)
@@ -236,7 +258,7 @@ func addRecipeInternal(exec *dbExecutor, recipe *Recipe) {
 	if err != nil {
 		panic(err)
 	} else {
-		fmt.Println("The recipe '" + recipe.Name + "' already exists!")
+		fmt.Println("The recipe '" + recipe.Name + "' was added!")
 	}
 
 }

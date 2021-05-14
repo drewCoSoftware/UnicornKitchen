@@ -72,10 +72,11 @@ func main() {
 
 	database.AddRecipe(&r2)
 
-	//	file.read
-	//	defer file.Close()
+	// Create a json file that will contain all of the 'default' data that we want to
+	// appear.  Use this to create + populate the data, like all of the code above is
+	// doing.
 
-	// Complete the recipe adding code...
-	// Find a way to define the recipes in a JSON file to make adding the default data less verbose.
+	// After that we can look at setting up an HTTP endpoint to do some GraphQL queries
+	// against our data....
 
 }

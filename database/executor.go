@@ -37,6 +37,18 @@ func CreateExecutorWithContext(connectFunc func() *sql.DB, ctx context.Context, 
 	return res
 }
 
+func (dbe *dbExecutor) QueryRow(query string, args ...interface{}) *sql.Row {
+	var res *sql.Row
+
+	if dbe.tx != nil {
+		res = dbe.tx.QueryRowContext(dbe.ctx, query, args...)
+	} else {
+		res = dbe.db.QueryRowContext(dbe.ctx, query, args...)
+	}
+
+	return res
+}
+
 func (dbe *dbExecutor) Query(query string, args ...interface{}) (*sql.Rows, error) {
 	var res *sql.Rows
 	var err error
