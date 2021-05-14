@@ -1,24 +1,82 @@
 {
-    "Name" : "Mashed Potatoes",
-    "Description": "Potatoes that have been boiled and mashed.",
-    "Yield": {
-        "Amount": "6 Cups",
-        "Ingredient": { "Name": "Mashed Potatoes" }
-    },
     "Ingredients": [
         {
-            "Ingredient": {
-                "Name": "Potato"
+            "Name": "Potato",
+            "Description": "A starchy tuber!"
+        }
+    ],
+    "Recipes": [
+        {
+            "Name": "Electric Potato",
+            "Description": "Create some volts from a potato, and other household items.",
+            "Yield": {
+                "Amount": "0.5-1.1",
+                "Ingredient": {
+                    "Name": "Volt"
+                }
             },
-            "IngredientAmount": "4"
+            "Ingredients": [
+                {
+                    "Ingredient": {
+                        "Name": "Potato"
+                    },
+                    "IngredientAmount": "1"
+                },
+                {
+                    "Ingredient": {
+                        "Name": "Iron Nail"
+                    },
+                    "IngredientAmount": "1"
+                },
+                {
+                    "Ingredient": {
+                        "Name": "Copper Penny"
+                    },
+                    "IngredientAmount": "1"
+                },
+                {
+                    "Ingredient": {
+                        "Name": "Alligator Clip"
+                    },
+                    "IngredientAmount": "2"
+                }
+            ],
+            "Instructions": [
+                { "Content": "Insert the penny and the nail into the potato, about half an inch apart." },
+                { "Content": "Attach one alligator clip to the penny, and the other to the nail.  You may now attach the device you wish to power to the clips" },
+                { "Content": "The voltage can now be measured with a multimeter." },
+                { "Content": "The voltage can be adjusted by placing the penny and nail closer, or further apart." }
+            ]
         },
         {
-            "Ingredient": { "Name": "Butter" },
-            "IngredientAmount": "4 tbsp."
-        },
-        {
-            "Ingredient": { "Name": "Whole Milk" },
-            "IngredientAmount": "1/2 Cup"
+            "Name": "Mashed Potatoes",
+            "Description": "Potatoes that have been boiled and mashed.",
+            "Yield": {
+                "Amount": "6 Cups",
+                "Ingredient": {
+                    "Name": "Mashed Potatoes"
+                }
+            },
+            "Ingredients": [
+                {
+                    "Ingredient": {
+                        "Name": "Potato"
+                    },
+                    "IngredientAmount": "4"
+                },
+                {
+                    "Ingredient": {
+                        "Name": "Butter"
+                    },
+                    "IngredientAmount": "4 tbsp."
+                },
+                {
+                    "Ingredient": {
+                        "Name": "Whole Milk"
+                    },
+                    "IngredientAmount": "1/2 Cup"
+                }
+            ]
         }
     ]
 }

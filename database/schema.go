@@ -21,6 +21,7 @@ func createSchema(removeExistingTables bool) {
 
 	if removeExistingTables {
 		fmt.Println("The old tables will be removed.")
+		dropTable(db, "recipe_instructions")
 		dropTable(db, "recipe_ingredients")
 		dropTable(db, "recipes")
 		dropTable(db, "ingredients")
@@ -56,4 +57,14 @@ func createSchema(removeExistingTables bool) {
 				  -- I have left the explicit FK syntax in place so that one might contemplate the differences.`
 
 	exec(db, query, false)
+
+	fmt.Println("Creating table 'recipe_instructions'")
+	query = `CREATE TABLE recipe_instructions (
+			 Id BIGSERIAL PRIMARY KEY,
+			 RecipeId BIGINT NOT NULL REFERENCES recipes (RecipeId) ON DELETE CASCADE,
+			 InstructionOrder BIGINT NOT NULL,
+			 Content VARCHAR NOT NULL )`
+
+	exec(db, query, false)
+
 }

@@ -218,16 +218,27 @@ func AddRecipe(recipe *Recipe) {
 	}
 
 	// Now all of the ingredient refs...
-	for x := range recipe.Ingredients {
-		ri := recipe.Ingredients[x]
+	for _, ri := range recipe.Ingredients {
 		addIngredientInternal(exec, ri.Ingredient)
 		addIngredientRef(exec, dbr.Id, ri)
+	}
+
+	for i, instr := range recipe.Instructions {
+		addInstructionInternal(exec, dbr.Id, i, instr)
 	}
 
 	// If we don't flag the executor as being OK, then the transaction
 	// won't get committed...
 	exec.SetTransationFlag(true)
 
+}
+
+func addInstructionInternal(exec *dbExecutor, recipeId int64, order int, instr *RecipeInstruction) {
+	query := `INSERT INTO recipe_instructions (RecipeId, InstructionOrder, Content) VALUES ($1, $2, $3)`
+	_, err := exec.Exec(query, recipeId, order, instr.Content)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Associates an ingredient, and an amount with the given recipe.

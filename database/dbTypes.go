@@ -9,11 +9,20 @@ type Ingredient struct {
 }
 
 type Recipe struct {
-	Id          int64
-	Name        string
-	Description string
-	Ingredients []*RecipeIngredient
-	Yield       *RecipeYield
+	Id           int64
+	Name         string
+	Description  string
+	Ingredients  []*RecipeIngredient
+	Instructions []*RecipeInstruction
+	Yield        *RecipeYield
+}
+
+// A single instruction that is included in a recipe.
+type RecipeInstruction struct {
+	Id       int64
+	RecipeId int64
+	Order    int64
+	Content  string
 }
 
 type RecipeIngredient struct {
