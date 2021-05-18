@@ -78,10 +78,8 @@ func (dbe *dbExecutor) Exec(query string, args ...interface{}) (sql.Result, erro
 func (dbe *dbExecutor) Complete() {
 	if dbe.tx != nil {
 		if dbe.txOK {
-			fmt.Println("The transaction flag was set, so it will be comitted.")
 			dbe.tx.Commit()
 		} else {
-			fmt.Println("The transaction flag was not set, so it will be rolled back!")
 			dbe.tx.Rollback()
 		}
 	}

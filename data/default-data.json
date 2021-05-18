@@ -76,6 +76,12 @@
                     },
                     "IngredientAmount": "1/2 Cup"
                 }
+            ],
+            "Instructions": [
+                { "Content": "Chop the potatos into about 1 inch cubes and boild them in salted water until they are soft." },
+                { "Content": "Drain the water from the potatos, add butter and mash with a potato masher until the butter is melted." },
+                { "Content": "Add milk a little at a time while mashing until the desired consistency is reached." },
+                { "Content": "Add salt and pepper to taste." }
             ]
         }
     ]

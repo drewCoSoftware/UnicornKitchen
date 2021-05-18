@@ -6,17 +6,20 @@ import (
 	"os"
 
 	"github.com/drewCoSoftware/UnicornKitchen/database"
-	//	"github.com/drewCoSoftware/UnicornKitchen/ingredients"
 )
 
 func main() {
 	fmt.Println("What's cookin' in the Unicorn Kitchen?")
 
-	// potato := &database.Ingredient{
-	// 	Name:        "Potato",
-	// 	Description: "A starchy tuber!",
-	// }
-	// database.AddIngredient(potato)
+	database.CreateDatabase()
+	addDefaultData()
+
+	// After that we can look at setting up an HTTP endpoint to do some GraphQL queries
+	// against our data....
+
+}
+
+func addDefaultData() {
 
 	type defaultData struct {
 		Ingredients []database.Ingredient
@@ -37,7 +40,6 @@ func main() {
 	}
 
 	// Splat the default data into the database.
-	database.CreateDatabase()
 	for _, i := range dd.Ingredients {
 		database.AddIngredient(&i)
 	}
@@ -45,10 +47,5 @@ func main() {
 	for _, r := range dd.Recipes {
 		database.AddRecipe(&r)
 	}
-
-	// Our recipes need instructions....
-
-	// After that we can look at setting up an HTTP endpoint to do some GraphQL queries
-	// against our data....
 
 }
