@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"fmt"
 )
 
 // This type helps us execute queries against a database.  It will internally manage

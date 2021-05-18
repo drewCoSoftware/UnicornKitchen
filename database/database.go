@@ -119,10 +119,10 @@ func getRecipeInternal(exec *dbExecutor, name string) *Recipe {
 	}
 
 	// Now we can get the basic recipe data that we care about...
-	query = "SELECT recipeid, name FROM recipes WHERE Name = $1"
+	query = "SELECT recipeid, name, description FROM recipes WHERE Name = $1"
 	row := exec.QueryRow(query, name)
 
-	err = row.Scan(&res.Id, &res.Name)
+	err = row.Scan(&res.Id, &res.Name, &res.Description)
 	if err != nil {
 		return nil
 	}
