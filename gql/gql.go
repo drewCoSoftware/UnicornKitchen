@@ -42,6 +42,14 @@ var rt2 = graphql.NewObject(graphql.ObjectConfig{
 		},
 		"instructions": &graphql.Field{
 			Type: graphql.NewList(graphql.String),
+			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+				if recipe, ok := p.Source.(*gqlRecipe); ok {
+					res := database.GetInstructions(recipe.Id)
+					return res, nil
+				} else {
+					return nil, nil
+				}
+			},
 		},
 		"ingredients": &graphql.Field{
 			Type: graphql.NewList(ii2),

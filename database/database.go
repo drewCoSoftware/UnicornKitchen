@@ -191,6 +191,31 @@ func checkErr(err error) {
 	}
 }
 
+// Get an ordered list of instructions for a given recipe.
+func GetInstructions(recipeId int64) []string {
+	dbExec := CreateExecutor(Connect, nil)
+	query := `SELECT Content, InstructionOrder FROM recipe_instructions 
+			  WHERE recipeid = $1 
+			  ORDER BY InstructionOrder ASC`
+
+	if rows, err := dbExec.Query(query, recipeId); err == nil {
+
+		res := make([]string, 0)
+		var order int64
+		for rows.Next() {
+			var content string
+			rows.Scan(&content, &order)
+
+			res = append(res, content)
+		}
+
+		return res
+	} else {
+		panic(err)
+	}
+
+}
+
 // Add a recipe to the database, saving new ingredients, etc. as we go.
 func AddRecipe(recipe *Recipe) {
 
