@@ -3,17 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
-	"os"
-	//	"reflect"
-
-	"io"
-	"net/http"
-
 	"github.com/drewCoSoftware/UnicornKitchen/database"
 	"github.com/drewCoSoftware/UnicornKitchen/gql"
 	"github.com/graphql-go/graphql"
-	//	"github.com/drewCoSoftware/UnicornKitchen/gql"
+	"io"
+	"log"
+	"net/http"
+	"os"
 )
 
 var callCount int64 = 0
@@ -21,12 +17,20 @@ var callCount int64 = 0
 func main() {
 	fmt.Println("What's cookin' in the Unicorn Kitchen?")
 
+	gql.GqlReflect()
+
+	// Query via GQL:
+	TestQuery()
+
+}
+
+func TestQuery() {
 	schema, err := graphql.NewSchema(graphql.SchemaConfig{Query: gql.RecipeQuery})
 	if err != nil {
 		panic(err)
 	}
 
-	query := `{ recipe(name:"Electric Potato") { name, description } }`
+	query := `{ recipe(name:"Electric Potato") { name, description, ingredients {name, amount}, instructions } }`
 
 	params := graphql.Params{Schema: schema, RequestString: query}
 	r := graphql.Do(params)
@@ -36,35 +40,6 @@ func main() {
 
 	rJSON, _ := json.Marshal(r)
 	fmt.Printf("%s \n", rJSON)
-
-	// Some reflection examples that we can hopefully use to auto-create gql defs....
-	// x := database.RecipeIngredient{}
-	// y := reflect.TypeOf(x)
-	// fmt.Println(y)
-	// fmt.Println(y.Kind())
-
-	// fieldCount := y.NumField()
-	// for i := 0; i < fieldCount; i++ {
-	// 	fmt.Printf("Field: %s is a: %s\n", y.Field(i).Name, y.Field(i).Type)
-	// }
-
-	// // Set routing rules
-	// http.HandleFunc("/", httpRoot)
-
-	// //Use the default DefaultServeMux.
-	// err := http.ListenAndServe(":8080", nil)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	// x := gql.RecipeType
-	// fmt.Printf("The name is: " + x.Name())
-	// database.CreateDatabase()
-	// addDefaultData()
-
-	// After that we can look at setting up an HTTP endpoint to do some GraphQL queries
-	// against our data....
-
 }
 
 func httpRoot(w http.ResponseWriter, r *http.Request) {
