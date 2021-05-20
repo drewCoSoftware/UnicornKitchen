@@ -2,6 +2,7 @@ package gql
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 
 	"github.com/drewCoSoftware/UnicornKitchen/database"
@@ -21,6 +22,9 @@ type gqlRecipe struct {
 	Ingredients  []gqlIngredient `json:"ingredients"`
 	Instructions []string        `json:"instructions"`
 }
+
+var RecipeQuery *graphql.Object
+var IngredientQuery *graphql.Object
 
 func InitTypes() {
 	ii2 := CreateGqlObjectFromType("ingredient", gqlIngredient{})
@@ -45,6 +49,48 @@ func InitTypes() {
 	RecipeQuery = graphql.NewObject(graphql.ObjectConfig{
 		Name: "Query",
 		Fields: graphql.Fields{
+			// TODO: A way to get all of the ingredients, with pagination. (via connect)
+			"ingredients": &graphql.Field{
+				Type: graphql.NewList(ii2),
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					match := database.GetIngredients()
+					size := len(match)
+
+					res := make([]*gqlIngredient, size)
+					for i := 0; i < size; i++ {
+						// NOTE: A DTOMapper might be nice here, but we probably
+						// can't make an efficient one in GO (emit ASM or similar at runtime)
+						res[i] = &gqlIngredient{
+							Name:        match[i].Name,
+							Description: match[i].Description,
+						}
+					}
+
+					return res, nil
+				},
+			},
+			"ingredient": &graphql.Field{
+				Type: ii2,
+				Args: graphql.FieldConfigArgument{
+					"name": &graphql.ArgumentConfig{
+						Type: graphql.String,
+					},
+				},
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					name, ok := p.Args["name"].(string)
+					if ok {
+						dbIngredient := database.GetIngredient(name)
+						res := &gqlIngredient{
+							Name:        dbIngredient.Name,
+							Description: dbIngredient.Description,
+						}
+						return res, nil
+					} else {
+						return nil, errors.New(fmt.Sprintf("There is no ingredient named: %s", name))
+					}
+				},
+			},
+
 			"recipe": &graphql.Field{
 				Type: rt2,
 				Args: graphql.FieldConfigArgument{
@@ -92,48 +138,6 @@ func InitTypes() {
 	})
 
 }
-
-// 		"instructions": &graphql.Field{
-// 			Type: graphql.NewList(graphql.String),
-// 			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-// 				if recipe, ok := p.Source.(*gqlRecipe); ok {
-// 					res := database.GetInstructions(recipe.Id)
-// 					return res, nil
-// 				} else {
-// 					return nil, nil
-// 				}
-// 			},
-// 		},
-
-// var rt2 = graphql.NewObject(graphql.ObjectConfig{
-// 	Name: "recipe",
-// 	Fields: graphql.Fields{
-// 		"id": &graphql.Field{
-// 			Type: graphql.Int,
-// 		},
-// 		"name": &graphql.Field{
-// 			Type: graphql.String,
-// 		},
-// 		"description": &graphql.Field{
-// 			Type: graphql.String,
-// 		},
-// 		"ingredients": &graphql.Field{
-// 			Type: graphql.NewList(ii2),
-// 		},
-// 		"instructions": &graphql.Field{
-// 			Type: graphql.NewList(graphql.String),
-// 			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-// 				if recipe, ok := p.Source.(*gqlRecipe); ok {
-// 					res := database.GetInstructions(recipe.Id)
-// 					return res, nil
-// 				} else {
-// 					return nil, nil
-// 				}
-// 			},
-// 		},
-// 	},
-// })
-var RecipeQuery *graphql.Object
 
 func isArrayOrSlice(val interface{}) bool {
 	v := reflect.ValueOf(val)

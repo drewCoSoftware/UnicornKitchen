@@ -156,6 +156,25 @@ func getIngredientInternal(exec *dbExecutor, name string) *Ingredient {
 	return res
 }
 
+func GetIngredients() []Ingredient {
+	exec := CreateExecutor(Connect, nil)
+	defer exec.Complete()
+
+	query := `SELECT ingredientid, name, description FROM ingredients`
+	if rows, err := exec.Query(query); err == nil {
+		res := make([]Ingredient, 0)
+		for rows.Next() {
+			i := Ingredient{}
+			rows.Scan(&i.Id, &i.Name, &i.Description)
+			res = append(res, i)
+		}
+
+		return res
+	} else {
+		panic(err)
+	}
+}
+
 func HasIngredient(name string) bool {
 	exec := CreateExecutor(Connect, nil)
 	defer exec.Complete()
@@ -194,6 +213,8 @@ func checkErr(err error) {
 // Get an ordered list of instructions for a given recipe.
 func GetInstructions(recipeId int64) []string {
 	dbExec := CreateExecutor(Connect, nil)
+	defer dbExec.Complete()
+
 	query := `SELECT Content, InstructionOrder FROM recipe_instructions 
 			  WHERE recipeid = $1 
 			  ORDER BY InstructionOrder ASC`

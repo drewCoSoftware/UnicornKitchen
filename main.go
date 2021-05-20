@@ -30,7 +30,10 @@ func TestQuery() {
 		panic(err)
 	}
 
-	query := `{ recipe(name:"Electric Potato") { name, description, ingredients {name, amount}, instructions } }`
+	// query := `{ recipe(name:"Electric Potato") { name, description, ingredients {name, amount}, instructions } }`
+
+	// query = `{ ingredient(name:"Potato") { name, description } }`
+	query := `{ ingredients { name, description } }`
 
 	params := graphql.Params{Schema: schema, RequestString: query}
 	r := graphql.Do(params)
