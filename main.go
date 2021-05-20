@@ -17,7 +17,7 @@ var callCount int64 = 0
 func main() {
 	fmt.Println("What's cookin' in the Unicorn Kitchen?")
 
-	gql.GqlReflect()
+	gql.InitTypes()
 
 	// Query via GQL:
 	TestQuery()
