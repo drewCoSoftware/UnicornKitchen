@@ -9,6 +9,22 @@ import (
 	_ "github.com/lib/pq"
 )
 
+const (
+	DEFAULT_PAGE_SIZE int64 = 5
+)
+
+type PageArgs struct {
+	First  int64
+	Before string
+	Last   int64
+	After  string
+}
+
+// NOTE: Being able to make sure that the args are OK would be a good thing!
+// func (args PageArgs) validatePageArgs() bool {
+
+// }
+
 // This will create the database and setup the schema.
 func CreateDatabase() {
 
@@ -156,11 +172,27 @@ func getIngredientInternal(exec *dbExecutor, name string) *Ingredient {
 	return res
 }
 
-func GetIngredients() []Ingredient {
+func GetIngredients(pageArgs *PageArgs) []Ingredient {
 	exec := CreateExecutor(Connect, nil)
 	defer exec.Complete()
 
 	query := `SELECT ingredientid, name, description FROM ingredients`
+
+	// Evaluate the page args....
+	if pageArgs == nil {
+		pageArgs = &PageArgs{
+			First: DEFAULT_PAGE_SIZE,
+		}
+	}
+
+	// Add pagination.....
+	// limit := pageArgs.First
+	// if pageArgs.Last > 0 {
+	// 	limit = pageArgs.Last
+	// }
+
+	//	query += " LIMIT $1"
+
 	if rows, err := exec.Query(query); err == nil {
 		res := make([]Ingredient, 0)
 		for rows.Next() {

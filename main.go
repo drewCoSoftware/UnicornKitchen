@@ -18,6 +18,7 @@ func main() {
 	fmt.Println("What's cookin' in the Unicorn Kitchen?")
 
 	gql.InitTypes()
+	gql.InitQueries()
 
 	// Query via GQL:
 	TestQuery()

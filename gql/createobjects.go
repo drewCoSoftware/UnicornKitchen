@@ -96,6 +96,8 @@ func resolveGraphqlType(t reflect.Type) (graphql.Output, error) {
 			return graphql.Int, nil
 		case "string":
 			return graphql.String, nil
+		case "bool":
+			return graphql.Boolean, nil
 		default:
 			return nil, errors.New("Unknown graphql type name: " + t.Name())
 		}
