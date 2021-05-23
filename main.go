@@ -33,7 +33,15 @@ func TestQuery() {
 	// query := `{ recipe(name:"Electric Potato") { name, description, ingredients {name, amount}, instructions } }`
 
 	// query = `{ ingredient(name:"Potato") { name, description } }`
-	query := `{ ingredients { name, description } }`
+
+	// w/o paging....
+	// query := `{ ingredients { name, description } }`
+
+	// w/ paging
+	query := `{ ingredients(first:3) { count, edges { cursor, node { name, description } } } }`
+
+	// Type introspection.
+	//	query := `{ __type(name:"gqlIngredientEdge") { name, fields { name } } }` // { types { name } }}"
 
 	params := graphql.Params{Schema: schema, RequestString: query}
 	r := graphql.Do(params)

@@ -15,6 +15,32 @@ type gqlIngredient struct {
 	Amount      string `json:"amount"`
 }
 
+type PageInfo struct {
+	HasPreviousPage bool   `json:"hasPreviousPage"`
+	HasNextPage     bool   `json:"hasNextPage"`
+	StartCursor     string `json:"startCursor"`
+	EndCursor       string `json:"endCursor"`
+}
+
+type gqlIngredientConnection struct {
+	Count    int                 `json:"count"`
+	Edges    []gqlIngredientEdge `json:"edges"`
+	PageInfo PageInfo            `json:"pageInfo"`
+}
+
+type gqlIngredientEdge struct {
+	Node   gqlIngredient `json:"node"`
+	Cursor string        `json:"cursor"`
+}
+
+func Create(input database.Ingredient) gqlIngredient {
+	res := gqlIngredient{
+		Name:        input.Name,
+		Description: input.Description,
+	}
+	return res
+}
+
 type gqlRecipe struct {
 	Id           int64           `json:"id"`
 	Name         string          `json:"name"`
@@ -27,8 +53,9 @@ var RecipeQuery *graphql.Object
 var IngredientQuery *graphql.Object
 
 func InitTypes() {
-	ii2 := CreateGqlObjectFromType("ingredient", gqlIngredient{})
-	rt2 := CreateGqlObjectFromType("recipe", gqlRecipe{})
+	ingredientConnection := CreateGqlDefFromInstance("ingredientsConnection", gqlIngredientConnection{})
+	ii2 := CreateGqlDefFromInstance("ingredient", gqlIngredient{})
+	rt2 := CreateGqlDefFromInstance("recipe", gqlRecipe{})
 
 	rt2.AddFieldConfig("ingredients", &graphql.Field{
 		Type: graphql.NewList(ii2),
@@ -51,20 +78,53 @@ func InitTypes() {
 		Fields: graphql.Fields{
 			// TODO: A way to get all of the ingredients, with pagination. (via connect)
 			"ingredients": &graphql.Field{
-				Type: graphql.NewList(ii2),
+				Type: ingredientConnection,
+				Args: graphql.FieldConfigArgument{
+					"first": &graphql.ArgumentConfig{
+						Type: graphql.Int,
+					},
+					"after": &graphql.ArgumentConfig{
+						Type: graphql.String,
+					},
+					"last": &graphql.ArgumentConfig{
+						Type: graphql.Int,
+					},
+					"before": &graphql.ArgumentConfig{
+						Type: graphql.String,
+					},
+				},
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+
+					// NOTE: Let's ignore the arguments for a sec...
 					match := database.GetIngredients()
 					size := len(match)
 
-					res := make([]*gqlIngredient, size)
-					for i := 0; i < size; i++ {
-						// NOTE: A DTOMapper might be nice here, but we probably
-						// can't make an efficient one in GO (emit ASM or similar at runtime)
-						res[i] = &gqlIngredient{
-							Name:        match[i].Name,
-							Description: match[i].Description,
-						}
+					res := gqlIngredientConnection{
+						Count: size,
+						Edges: make([]gqlIngredientEdge, size),
+						PageInfo: PageInfo{
+							HasPreviousPage: false,
+							HasNextPage:     false,
+						},
 					}
+
+					for i, item := range match {
+						edge := gqlIngredientEdge{
+							Node:   Create(item),
+							Cursor: "abc",
+						}
+						res.Edges[i] = edge
+					}
+
+					// res := make([]*gqlIngredient, size)
+					// for i := 0; i < size; i++ {
+					// 	// NOTE: A DTOMapper might be nice here, but we probably
+					// 	// can't make an efficient one in GO (emit ASM or similar at runtime)
+					// 	res[i] = &gqlIngredient{
+					// 		Name:        match[i].Name,
+					// 		Description: match[i].Description,
+					// 	}
+					// }
 
 					return res, nil
 				},
