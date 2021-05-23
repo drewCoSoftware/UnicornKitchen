@@ -14,12 +14,28 @@ var IngredientQuery *graphql.Object
 
 func resolvePageArgs(p graphql.ResolveParams) database.PageArgs {
 	res := database.PageArgs{
-		Before: p.Args["before"].(string),
-		After:  p.Args["after"].(string),
+		Before: asString(p.Args["before"]),
+		After:  asString(p.Args["after"]),
 	}
-	res.First = tryParseInt64(p.Args["first"].(string), -1)
-	res.Last = tryParseInt64(p.Args["last"].(string), -1)
+	res.First = asInt(p.Args["first"])
+	res.Last = asInt(p.Args["last"])
 
+	return res
+}
+
+func asInt(input interface{}) int {
+	if input == nil {
+		return 0
+	}
+	res := input.(int)
+	return res
+}
+
+func asString(input interface{}) string {
+	if input == nil {
+		return ""
+	}
+	res := input.(string)
 	return res
 }
 

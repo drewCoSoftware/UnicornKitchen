@@ -10,13 +10,13 @@ import (
 )
 
 const (
-	DEFAULT_PAGE_SIZE int64 = 5
+	DEFAULT_PAGE_SIZE int = 5
 )
 
 type PageArgs struct {
-	First  int64
+	First  int
 	Before string
-	Last   int64
+	Last   int
 	After  string
 }
 
