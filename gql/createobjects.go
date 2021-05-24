@@ -14,10 +14,6 @@ func CreateGqlDefFromType(name string, dataType reflect.Type) *graphql.Object {
 	fieldCount := dataType.NumField()
 	var fields graphql.Fields = make(map[string]*graphql.Field)
 
-	// NOTE: This doesn't work because of how goes type system works.
-	// Go typedefs ARE NOT simple aliases.
-	// fields := make(map[string]*graphql.Field)
-
 	for i := 0; i < fieldCount; i++ {
 		field := dataType.Field(i)
 

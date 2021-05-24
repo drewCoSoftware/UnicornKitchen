@@ -15,9 +15,13 @@ const (
 
 type PageArgs struct {
 	First  int
+	After  string
 	Before string
 	Last   int
-	After  string
+}
+
+func (args *PageArgs) IsBefore() bool {
+	return args.Before != "" && args.Last > 0
 }
 
 // NOTE: Being able to make sure that the args are OK would be a good thing!
@@ -185,15 +189,38 @@ func GetIngredients(pageArgs *PageArgs) []Ingredient {
 		}
 	}
 
-	// Add pagination.....
-	// limit := pageArgs.First
-	// if pageArgs.Last > 0 {
-	// 	limit = pageArgs.Last
+	var queryArgs []interface{}
+
+	// Cursor indicator....
+	if pageArgs.IsBefore() {
+		query += " WHERE ingredientid < " + getArgIndex(queryArgs)
+		queryArgs = append(queryArgs, pageArgs.Before)
+
+		query += " ORDER BY ingredientid DESC"
+	} else {
+		// Use an 'after query'
+		query += " WHERE ingredientid > " + getArgIndex(queryArgs)
+		queryArgs = append(queryArgs, pageArgs.After)
+
+		query += " ORDER BY ingredientid ASC"
+	}
+	// if pageArgs.Before != "" {
+	// } else if pageArgs.After != "" {
 	// }
 
-	//	query += " LIMIT $1"
+	// ordering.  This is how we get it to work...
+	//	query += " ORDER BY ingredientid ASC"
 
-	if rows, err := exec.Query(query); err == nil {
+	// Add pagination.....
+	limit := pageArgs.First
+	if pageArgs.Last > 0 {
+		limit = pageArgs.Last
+	}
+
+	query += " LIMIT " + getArgIndex(queryArgs)
+	queryArgs = append(queryArgs, fmt.Sprintf("%d", limit))
+
+	if rows, err := exec.Query(query, queryArgs...); err == nil {
 		res := make([]Ingredient, 0)
 		for rows.Next() {
 			i := Ingredient{}
@@ -201,10 +228,26 @@ func GetIngredients(pageArgs *PageArgs) []Ingredient {
 			res = append(res, i)
 		}
 
+		if pageArgs.IsBefore() {
+			// Reverse the order of the results.
+			reverse(res)
+		}
 		return res
 	} else {
 		panic(err)
 	}
+}
+
+// Reverse the order of the items.
+func reverse(items []Ingredient) {
+	for i, j := 0, len(items)-1; i < j; i, j = i+1, j-1 {
+		items[i], items[j] = items[j], items[i]
+	}
+}
+
+func getArgIndex(args []interface{}) string {
+	res := fmt.Sprintf("$%d", len(args)+1)
+	return res
 }
 
 func HasIngredient(name string) bool {

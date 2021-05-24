@@ -91,7 +91,7 @@ func InitQueries() {
 					for i, item := range match {
 						edge := gqlIngredientEdge{
 							Node:   Create(item),
-							Cursor: "abc",
+							Cursor: fmt.Sprintf("%d", item.Id),
 						}
 						res.Edges[i] = edge
 					}
