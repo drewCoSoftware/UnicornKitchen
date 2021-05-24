@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
-	"strings"
 
 	"github.com/graphql-go/graphql"
 )
@@ -29,7 +28,11 @@ func CreateGqlDefFromType(name string, dataType reflect.Type) *graphql.Object {
 			fmt.Println(msg)
 		} else {
 			// NOTE: We would want to use the json name here.....
-			fields[strings.ToLower(field.Name)] = &graphql.Field{
+			name := field.Name
+			if tag := field.Tag.Get("json"); tag != "" {
+				name = tag
+			}
+			fields[name] = &graphql.Field{
 				Type: fType,
 			}
 		}

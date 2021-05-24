@@ -79,21 +79,27 @@ func InitQueries() {
 					match := database.GetIngredients(&pageArgs)
 					size := len(match)
 
-					res := gqlIngredientConnection{
+					res := gqlIngredientsConnection{
 						Count: size,
 						Edges: make([]gqlIngredientEdge, size),
-						PageInfo: PageInfo{
-							HasPreviousPage: false,
-							HasNextPage:     false,
-						},
 					}
-
 					for i, item := range match {
 						edge := gqlIngredientEdge{
 							Node:   Create(item),
 							Cursor: fmt.Sprintf("%d", item.Id),
 						}
 						res.Edges[i] = edge
+					}
+
+					startCursor := res.Edges[0].Cursor
+					endCursor := res.Edges[size-1].Cursor
+
+					first, last := database.GetCursorBoundaries("ingredients", "ingredientid")
+					res.PageInfo = PageInfo{
+						StartCursor:     startCursor,
+						EndCursor:       endCursor,
+						HasPreviousPage: tryParseInt64(startCursor, 0) > first,
+						HasNextPage:     tryParseInt64(endCursor, 0) < last,
 					}
 
 					return res, nil

@@ -13,24 +13,6 @@ type gqlIngredient struct {
 	Amount      string `json:"amount"`
 }
 
-type PageInfo struct {
-	HasPreviousPage bool   `json:"hasPreviousPage"`
-	HasNextPage     bool   `json:"hasNextPage"`
-	StartCursor     string `json:"startCursor"`
-	EndCursor       string `json:"endCursor"`
-}
-
-type gqlIngredientConnection struct {
-	Count    int                 `json:"count"`
-	Edges    []gqlIngredientEdge `json:"edges"`
-	PageInfo PageInfo            `json:"pageInfo"`
-}
-
-type gqlIngredientEdge struct {
-	Node   gqlIngredient `json:"node"`
-	Cursor string        `json:"cursor"`
-}
-
 func Create(input database.Ingredient) gqlIngredient {
 	res := gqlIngredient{
 		Name:        input.Name,
@@ -52,7 +34,7 @@ var ingredientDef *graphql.Object
 var recipeDef *graphql.Object
 
 func InitTypes() {
-	ingredientConnection = CreateGqlDefFromInstance("ingredientsConnection", gqlIngredientConnection{})
+	ingredientConnection = CreateGqlDefFromInstance("ingredientsConnection", gqlIngredientsConnection{})
 	ingredientDef = CreateGqlDefFromInstance("ingredient", gqlIngredient{})
 	recipeDef = CreateGqlDefFromInstance("recipe", gqlRecipe{})
 

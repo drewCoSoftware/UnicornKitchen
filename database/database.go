@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -11,6 +12,7 @@ import (
 
 const (
 	DEFAULT_PAGE_SIZE int = 5
+	MAX_PAGE_SIZE     int = 25 // Prevent queries from using too many pages.
 )
 
 type PageArgs struct {
@@ -24,10 +26,46 @@ func (args *PageArgs) IsBefore() bool {
 	return args.Before != "" && args.Last > 0
 }
 
-// NOTE: Being able to make sure that the args are OK would be a good thing!
-// func (args PageArgs) validatePageArgs() bool {
+func (args *PageArgs) Sanitize() error {
+	args.First = clampPageSize(args.First)
+	args.Last = clampPageSize(args.First)
 
-// }
+	if args.Before != "" && args.After != "" {
+		return errors.New("Ambiguous page args.  'Before' and 'After' are both set!")
+	}
+
+	return nil
+}
+
+func clampPageSize(pageSize int) int {
+	if pageSize <= 0 {
+		return DEFAULT_PAGE_SIZE
+	}
+	if pageSize > MAX_PAGE_SIZE {
+		return MAX_PAGE_SIZE
+	}
+	return pageSize
+}
+
+// 	// NOTE: A time or event based cache would be a great idea for getting our first/last cursors for
+// 	// a given table.  This would prevent extra round trips to the DB.
+func GetCursorBoundaries(tableName string, idName string) (int64, int64) {
+	firstQuery := fmt.Sprintf("SELECT %s FROM %s ORDER BY %s ASC LIMIT 1", idName, tableName, idName)
+	lastQuery := fmt.Sprintf("SELECT %s FROM %s ORDER BY %s DESC LIMIT 1", idName, tableName, idName)
+
+	exec := CreateExecutor(Connect, nil)
+	defer exec.Complete()
+
+	var first int64
+	var last int64
+	firstRow := exec.QueryRow(firstQuery)
+	firstRow.Scan(&first)
+
+	lastRow := exec.QueryRow(lastQuery)
+	lastRow.Scan(&last)
+
+	return first, last
+}
 
 // This will create the database and setup the schema.
 func CreateDatabase() {
@@ -198,18 +236,14 @@ func GetIngredients(pageArgs *PageArgs) []Ingredient {
 
 		query += " ORDER BY ingredientid DESC"
 	} else {
-		// Use an 'after query'
-		query += " WHERE ingredientid > " + getArgIndex(queryArgs)
-		queryArgs = append(queryArgs, pageArgs.After)
+		// Use an 'after query'  This is always the
+		if pageArgs.After != "" {
+			query += " WHERE ingredientid > " + getArgIndex(queryArgs)
+			queryArgs = append(queryArgs, pageArgs.After)
+		}
 
 		query += " ORDER BY ingredientid ASC"
 	}
-	// if pageArgs.Before != "" {
-	// } else if pageArgs.After != "" {
-	// }
-
-	// ordering.  This is how we get it to work...
-	//	query += " ORDER BY ingredientid ASC"
 
 	// Add pagination.....
 	limit := pageArgs.First
