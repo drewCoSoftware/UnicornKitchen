@@ -40,10 +40,11 @@ func asString(input interface{}) string {
 }
 
 func tryParseInt64(input string, fallback int64) int64 {
-	if val, err := strconv.ParseInt(input, 2, 64); err == nil {
+	if val, err := strconv.ParseInt(input, 10, 64); err == nil {
 		return val
 	} else {
-		fmt.Println("Could not parse an int64 from input string: ", input, ". The fallback value will be used!")
+		fmt.Println("Could not parse an int64 from input string: '", input, "'. The fallback value will be used!")
+		fmt.Println("Error: ", err.Error())
 		return fallback
 	}
 }

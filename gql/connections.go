@@ -6,7 +6,7 @@ package gql
 type gqlIngredientsConnection struct {
 	Count    int                 `json:"count"`
 	Edges    []gqlIngredientEdge `json:"edges"`
-	PageInfo PageInfo            `json:"pageinfo"`
+	PageInfo PageInfo            `json:"pageInfo"`
 }
 
 type gqlIngredientEdge struct {

@@ -23,7 +23,7 @@ type PageArgs struct {
 }
 
 func (args *PageArgs) IsBefore() bool {
-	return args.Before != "" && args.Last > 0
+	return args.Before != "" || args.Last > 0
 }
 
 func (args *PageArgs) Sanitize() error {
@@ -231,8 +231,10 @@ func GetIngredients(pageArgs *PageArgs) []Ingredient {
 
 	// Cursor indicator....
 	if pageArgs.IsBefore() {
-		query += " WHERE ingredientid < " + getArgIndex(queryArgs)
-		queryArgs = append(queryArgs, pageArgs.Before)
+		if pageArgs.Before != "" {
+			query += " WHERE ingredientid < " + getArgIndex(queryArgs)
+			queryArgs = append(queryArgs, pageArgs.Before)
+		}
 
 		query += " ORDER BY ingredientid DESC"
 	} else {

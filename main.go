@@ -39,7 +39,7 @@ func TestQuery() {
 	// query := `{ ingredients { name, description } }`
 
 	// w/ paging
-	query := `{ ingredients(last:1) { count, edges { cursor, node { name, description } }, pageInfo { hasPreviousPage } } }`
+	query := `{ ingredients(last:3, before:"5") { count, edges { cursor, node { name, description } }, pageInfo { hasPreviousPage } } }`
 
 	// Type introspection.
 	//	query := `{ __type(name:"gqlIngredientEdge") { name, fields { name } } }` // { types { name } }}"
