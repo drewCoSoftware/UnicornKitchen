@@ -12,52 +12,63 @@ import (
 	"os"
 )
 
-var callCount int64 = 0
+var gqlSchema graphql.Schema
 
 func main() {
 	fmt.Println("What's cookin' in the Unicorn Kitchen?")
 
+	// Initialize our GraphQL stuff.
 	gql.InitTypes()
 	gql.InitQueries()
 
-	// Query via GQL:
-	TestQuery()
+	initGqlSchema()
 
+	// Query via GQL:
+	// TestQuery()
+
+	http.HandleFunc("/gql", handleGqlQuery)
+	err := http.ListenAndServe(":8080", nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
-func TestQuery() {
-	schema, err := graphql.NewSchema(graphql.SchemaConfig{Query: gql.RecipeQuery})
+func initGqlSchema() {
+
+	var err error
+	gqlSchema, err = graphql.NewSchema(graphql.SchemaConfig{Query: gql.RecipeQuery})
 	if err != nil {
 		panic(err)
 	}
 
-	// query := `{ recipe(name:"Electric Potato") { name, description, ingredients {name, amount}, instructions } }`
-
-	// query = `{ ingredient(name:"Potato") { name, description } }`
-
-	// w/o paging....
-	// query := `{ ingredients { name, description } }`
-
-	// w/ paging
-	query := `{ ingredients(last:3, before:"5") { count, edges { cursor, node { name, description } }, pageInfo { hasPreviousPage } } }`
-
-	// Type introspection.
-	//	query := `{ __type(name:"gqlIngredientEdge") { name, fields { name } } }` // { types { name } }}"
-
-	params := graphql.Params{Schema: schema, RequestString: query}
-	r := graphql.Do(params)
-	if len(r.Errors) > 0 {
-		log.Fatalf("failed to execute graphql operation, errors: %+v", r.Errors)
-	}
-
-	rJSON, _ := json.Marshal(r)
-	fmt.Printf("%s \n", rJSON)
 }
 
-func httpRoot(w http.ResponseWriter, r *http.Request) {
+// This acts a proxy for running our gql queries.  We now have an active GraphQL service!
+func handleGqlQuery(w http.ResponseWriter, r *http.Request) {
+	queryVals := r.URL.Query()
+	gqlQuery := queryVals.Get("query")
 
-	io.WriteString(w, fmt.Sprintf("version %d", callCount))
-	callCount++
+	json, errs := gql.Query(gqlSchema, gqlQuery)
+	if len(errs) > 0 {
+		for _, err := range errs {
+			io.Writer.Write(w, []byte(err.Message))
+		}
+	} else {
+		io.Writer.Write(w, json)
+	}
+
+}
+
+func TestQuery() {
+
+	// get ingredients w/ paging...
+	query := `{ ingredients(first:3, after:"-1") 
+				{ count, edges { cursor, node { name, description } }, 
+				  pageInfo { hasPreviousPage, hasNextPage, startCursor, endCursor } } }`
+
+	rJSON, _ := gql.Query(gqlSchema, query)
+
+	fmt.Printf("%s \n", rJSON)
 }
 
 func addDefaultData() {

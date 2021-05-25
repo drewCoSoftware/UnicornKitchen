@@ -1,10 +1,12 @@
 package gql
 
 import (
+	"encoding/json"
 	"reflect"
 
 	"github.com/drewCoSoftware/UnicornKitchen/database"
 	"github.com/graphql-go/graphql"
+	"github.com/graphql-go/graphql/gqlerrors"
 )
 
 type gqlIngredient struct {
@@ -53,7 +55,18 @@ func InitTypes() {
 			}
 		},
 	})
+}
 
+func Query(schema graphql.Schema, query string) ([]byte, []gqlerrors.FormattedError) {
+	params := graphql.Params{Schema: schema, RequestString: query}
+	r := graphql.Do(params)
+	if len(r.Errors) > 0 {
+		return nil, r.Errors
+	}
+
+	res, _ := json.Marshal(r)
+
+	return res, r.Errors
 }
 
 func isArrayOrSlice(val interface{}) bool {

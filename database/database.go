@@ -257,21 +257,41 @@ func GetIngredients(pageArgs *PageArgs) []Ingredient {
 	queryArgs = append(queryArgs, fmt.Sprintf("%d", limit))
 
 	if rows, err := exec.Query(query, queryArgs...); err == nil {
-		res := make([]Ingredient, 0)
+
+		data := make([]Ingredient, limit)
+		count := 0
+
 		for rows.Next() {
-			i := Ingredient{}
+			i := &data[count]
 			rows.Scan(&i.Id, &i.Name, &i.Description)
-			res = append(res, i)
+
+			count++
 		}
 
+		res := make([]Ingredient, count)
+		offset := 0
 		if pageArgs.IsBefore() {
-			// Reverse the order of the results.
-			reverse(res)
+			offset = count - 1
 		}
+		for i := 0; i < count; i++ {
+
+			index := absInt(offset - i)
+			res[i] = data[index]
+		}
+
 		return res
+
 	} else {
 		panic(err)
 	}
+}
+
+// Because this didn't seem like a useful function according to the Go engineers.
+func absInt(input int) int {
+	if input < 0 {
+		input = -input
+	}
+	return input
 }
 
 // Reverse the order of the items.

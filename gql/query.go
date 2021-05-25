@@ -43,8 +43,8 @@ func tryParseInt64(input string, fallback int64) int64 {
 	if val, err := strconv.ParseInt(input, 10, 64); err == nil {
 		return val
 	} else {
-		fmt.Println("Could not parse an int64 from input string: '", input, "'. The fallback value will be used!")
-		fmt.Println("Error: ", err.Error())
+		// fmt.Printf("Could not parse an int64 from input string: '%s'. The fallback value will be used!\n", input)
+		// fmt.Println("Error:", err.Error())
 		return fallback
 	}
 }
@@ -77,7 +77,16 @@ func InitQueries() {
 					// NOTE: Let's ignore the arguments for a sec...
 					pageArgs := resolvePageArgs(p)
 
+					// var matchCh = make(chan []database.Ingredient)
+					// go func(ch chan []database.Ingredient) {
+					// 	data := database.GetIngredients(&pageArgs)
+					// 	ch <- data
+					// }(matchCh)
+					// match := <-matchCh
+
+					// OLD, sync way...
 					match := database.GetIngredients(&pageArgs)
+
 					size := len(match)
 
 					res := gqlIngredientsConnection{
@@ -92,8 +101,13 @@ func InitQueries() {
 						res.Edges[i] = edge
 					}
 
-					startCursor := res.Edges[0].Cursor
-					endCursor := res.Edges[size-1].Cursor
+					var startCursor string = ""
+					var endCursor string = ""
+
+					if size > 0 {
+						startCursor = res.Edges[0].Cursor
+						endCursor = res.Edges[size-1].Cursor
+					}
 
 					first, last := database.GetCursorBoundaries("ingredients", "ingredientid")
 					res.PageInfo = PageInfo{
